@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing NFTs</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 90%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fonction pour effectuer la requête API et afficher les résultats
+            function fetchAllNFTs(walletName, schemaFilter, collectionName) {
+                // Informations pour la requête API
+                const apiUrl = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
+                const owner = walletName;
+                const order = 'asc';
+                const sort = 'name';
+
+                // Filtrer par le nom du schéma si spécifié
+                const schemaParam = schemaFilter ? `&schema_name=${schemaFilter}` : '';
+
+                // Filtrer par le nom de la collection si spécifié
+                const collectionParam = collectionName ? `&collection_name=${collectionName}` : '';
+
+                // Tableau pour stocker les entrées NFT
+                const nftEntries = [];
+
+                // Fonction récursive pour récupérer toutes les pages
+                function fetchPage(page) {
+                    const url = `${apiUrl}?owner=${owner}&page=${page}&order=${order}&sort=${sort}${schemaParam}${collectionParam}`;
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Si la page actuelle ne contient pas de NFT, arrêter la récursion
+                            if (data.data.length === 0) {
+                                // Afficher les résultats dans le HTML
+                                displayNFTs();
+                                return;
+                            }
+
+                            // Ajouter les résultats à la liste des entrées NFT
+                            nftEntries.push(...data.data);
+
+                            // Récupérer la page suivante si elle existe
+                            if (data.next_page !== null) {
+                                fetchPage(page + 1);
+                            } else {
+                                // Si c'est la dernière page, afficher les résultats dans le HTML
+                                displayNFTs();
+                            }
+                        })
+                        .catch(error => console.error('Erreur lors de la requête API :', error));
+                }
+
+                // Fonction pour afficher les résultats dans le HTML
+                function displayNFTs() {
+                    // Afficher les résultats dans le HTML
+                    const nftsTable = document.getElementById('nfts-table');
+
+                    // Tableau pour suivre les occurrences de chaque NFT
+                    const nftCounts = new Map();
+
+                    nftEntries.forEach(nft => {
+                        const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
+                        const templateId = nft.template.template_id;
+
+                        // Construire une clé unique pour chaque NFT
+                        const key = `${nft.owner}-${nft.name}-${templateId}-${rarity}`;
+
+                        // Incrémenter le nombre d'occurrences dans le tableau de comptage
+                        nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
+                    });
+
+                    // Ajouter les résultats au tableau HTML
+                    nftCounts.forEach((count, key) => {
+                        const [owner, name, templateId, rarity] = key.split('-');
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${owner}</td>
+                            <td>${name}</td>
+                            <td>${templateId}</td>
+                            <td>${rarity}</td>
+                            <td class="count">${count}</td>
+                        `;
+                        nftsTable.querySelector('tbody').appendChild(row);
+                    });
+                }
+
+                // Commencer la récupération des pages à partir de la page 1
+                fetchPage(1);
+            }
+
+            // Fonction appelée lors du clic sur le bouton "Start"
+            function startFetching() {
+                // Récupérer le nom du wallet depuis l'input
+                const walletName = document.getElementById('wallet-input').value;
+
+                // Vérifier si le nom du wallet est fourni
+                if (walletName.trim() !== '') {
+                    // Récupérer le nom du schéma depuis l'input
+                    const schemaFilter = document.getElementById('schema-input').value;
+
+                    // Récupérer le nom de la collection depuis l'input
+                    const collectionName = document.getElementById('collection-input').value;
+
+                    // Appeler la fonction pour récupérer les NFTs avec les filtres spécifiés
+                    fetchAllNFTs(walletName, schemaFilter, collectionName);
+                } else {
+                    alert('Veuillez entrer un nom de wallet.');
+                }
+
+                // Effacer le contenu des inputs après l'exécution
+                document.getElementById('wallet-input').value = '';
+                document.getElementById('schema-input').value = '';
+                document.getElementById('collection-input').value = '';
+            }
+
+            // Ajouter un gestionnaire d'événements au bouton "Start"
+            document.getElementById('start-button').addEventListener('click', startFetching);
+        });
+    </script>
+</head>
+<body>
+    <h1>SuperBuu</h1>
+
+    <label for="wallet-input">Nom du wallet :</label>
+    <input type="text" id="wallet-input" placeholder="Entrez le nom du wallet">
+
+    <label for="schema-input">Nom du schéma :</label>
+    <input type="text" id="schema-input" placeholder="Entrez le nom du schéma">
+
+    <label for="collection-input">Nom de la collection :</label>
+    <input type="text" id="collection-input" placeholder="Entrez le nom de la collection">
+
+    <button id="start-button">Start</button>
+
+    <table id="nfts-table">
+        <thead>
+            <tr>
+                <th>Wallet</th>
+                <th>Nom NFT</th>
+                <th>Template ID</th>
+                <th>Rareté</th>
+                <th>Nombre de doublons</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</body>
+</html>
