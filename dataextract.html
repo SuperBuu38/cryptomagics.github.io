@@ -1,79 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Data</title>
+
+    <style>
+        /* Style to make tables appear side by side */
+        table {
+            float: left;
+            margin-right: 20px;
+        }
+
+        /* Style for clickable links */
+        .template-link {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
 
-<table border="1" id="data-table">
-  <thead>
-    <tr>
-      <th>Template ID</th>
-      <th>Name</th>
-      <th>Team</th>
-      <th>Position</th>
-      <th>Depth</th>
-      <th>Timestamp</th>
-      <th>Game</th>
-      <th>Day</th>
-      <th>Cost</th>
-      <th>Status Injury</th>
-    </tr>
-  </thead>
-  <tbody id="data-body">
-    <!-- Data will be inserted here -->
-  </tbody>
-</table>
+    <table border="1" id="data-table">
+        <thead>
+            <tr>
+                <th>Template ID</th>
+                <th>Name</th>
+                <th>Team</th>
+                <th>Position</th>
+                <th>Depth</th>
+                <th>Timestamp</th>
+                <th>Game</th>
+                <th>Day</th>
+                <th>Cost</th>
+                <th>Status Injury</th>
+            </tr>
+        </thead>
+        <tbody id="data-body">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
 
-<script>
-  // Fonction pour effectuer la requête AJAX
-  function fetchData() {
-    var url = "https://bask-api-main-420f15f4aab2.herokuapp.com/api/v1/lineup/format/json";
+    <!-- New table for players without null status_injury -->
+    <table border="1" id="players-without-null-status">
+        <thead>
+            <tr>
+                <th>Template ID</th>
+                <th>Name</th>
+                <th>Team</th>
+                <th>Position</th>
+                <th>Depth</th>
+                <th>Timestamp</th>
+                <th>Game</th>
+                <th>Day</th>
+                <th>Cost</th>
+                <th>Status Injury</th>
+            </tr>
+        </thead>
+        <tbody id="players-without-null-status-body">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
 
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
+    <script>
+        // Fonction pour effectuer la requête AJAX
+        function fetchData() {
+            var url = "https://bask-api-main-420f15f4aab2.herokuapp.com/api/v1/lineup/format/json";
 
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        var data = JSON.parse(xhr.responseText);
-        updateTable(data);
-      }
-    };
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
 
-    xhr.send();
-  }
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    updateTables(data);
+                } else {
+                    console.error("Failed to fetch data. HTTP status:", xhr.status);
+                }
+            };
 
-  // Fonction pour mettre à jour le tableau HTML avec les données
-  function updateTable(data) {
-    var tableBody = document.getElementById("data-body");
+            xhr.send();
+        }
 
-    // Effacer le contenu actuel du tableau
-    tableBody.innerHTML = "";
+        // Fonction pour convertir le timestamp en date avec le format d'heure spécifié
+        function convertTimestampToDateString(timestamp) {
+            var date = new Date(timestamp * 1000); // Convertir le timestamp en millisecondes
 
-    // Ajouter les nouvelles données
-    data.forEach(function (entry) {
-      var row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${entry.template_id}</td>
-        <td>${entry.name}</td>
-        <td>${entry.team}</td>
-        <td>${entry.position}</td>
-        <td>${entry.depth}</td>
-        <td>${entry.timestamp}</td>
-        <td>${entry.game}</td>
-        <td>${entry.day}</td>
-        <td>${entry.cost}</td>
-        <td>${entry.status_injury}</td>
-      `;
-      tableBody.appendChild(row);
-    });
-  }
+            var options = {
+                day: 'numeric', month: 'numeric', year: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true,
+                timeZone: 'America/New_York'
+            };
 
-  // Appeler la fonction fetchData au chargement de la page
-  window.onload = fetchData;
-</script>
+            return date.toLocaleTimeString('en-US', options);
+        }
+
+        // Fonction pour mettre à jour les tableaux HTML avec les données
+        function updateTables(data) {
+            var tableBody = document.getElementById("data-body");
+            var playersWithoutNullStatusBody = document.getElementById("players-without-null-status-body");
+
+            // Effacer le contenu actuel des tableaux
+            tableBody.innerHTML = "";
+            playersWithoutNullStatusBody.innerHTML = "";
+
+            // Ajouter les nouvelles données aux deux tableaux
+            data.forEach(function (entry) {
+                var row = document.createElement("tr");
+
+                // Check if the status is "out" and add the appropriate class
+                var statusClass = entry.status_injury && entry.status_injury.toLowerCase() === "out" ? "status-out" : "";
+
+                // Ajouter un lien autour du Template ID
+                row.innerHTML = `
+                    <td><a href="https://atomichub.io/explorer/template/wax-mainnet/playnftdraft/${entry.template_id}" target="_blank" class="template-link">${entry.template_id}</a></td>
+                    <td>${entry.name}</td>
+                    <td>${entry.team}</td>
+                    <td>${entry.position}</td>
+                    <td>${entry.depth}</td>
+                    <td>${convertTimestampToDateString(entry.timestamp)}</td>
+                    <td>${entry.game}</td>
+                    <td>${entry.day}</td>
+                    <td>${entry.cost}</td>
+                    <td class="${statusClass}">${entry.status_injury}</td>
+                `;
+
+                tableBody.appendChild(row);
+
+                // Add players without null status_injury to the second table
+                if (entry.status_injury !== null) {
+                    var playerWithoutNullStatusRow = document.createElement("tr");
+                    playerWithoutNullStatusRow.innerHTML = `
+                        <td><a href="https://atomichub.io/explorer/template/wax-mainnet/playnftdraft/${entry.template_id}" target="_blank" class="template-link">${entry.template_id}</a></td>
+                        <td>${entry.name}</td>
+                        <td>${entry.team}</td>
+                        <td>${entry.position}</td>
+                        <td>${entry.depth}</td>
+                        <td>${convertTimestampToDateString(entry.timestamp)}</td>
+                        <td>${entry.game}</td>
+                        <td>${entry.day}</td>
+                        <td>${entry.cost}</td>
+                        <td>${entry.status_injury}</td>
+                    `;
+                    playersWithoutNullStatusBody.appendChild(playerWithoutNullStatusRow);
+                }
+            });
+
+            console.log("Data updated successfully:", data);
+        }
+
+        // Appeler la fonction fetchData au chargement de la page
+        window.onload = fetchData;
+    </script>
 
 </body>
+
 </html>
