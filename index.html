@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,19 +12,29 @@
             align-items: center;
             margin: 20px;
         }
+
         h1 {
             font-size: 24px;
             margin-bottom: 10px;
         }
+
         table {
             width: 90%;
             margin-top: 20px;
             border-collapse: collapse;
         }
+
         th, td {
             text-align: center;
             padding: 10px;
             border: 1px solid #ddd;
+        }
+
+        /* Style for clickable links */
+        .template-link {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
         }
     </style>
     <script>
@@ -84,9 +95,10 @@
                     nftEntries.forEach(nft => {
                         const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
                         const templateId = nft.template.template_id;
+                        const nftCollection = nft.collection.collection_name;
 
                         // Construire une clé unique pour chaque NFT
-                        const key = `${nft.owner}-${nft.name}-${templateId}-${rarity}`;
+                        const key = `${nft.owner}-${nft.name}-${templateId}-${rarity}-${nftCollection}`;
 
                         // Incrémenter le nombre d'occurrences dans le tableau de comptage
                         nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
@@ -94,13 +106,13 @@
 
                     // Ajouter les résultats au tableau HTML
                     nftCounts.forEach((count, key) => {
-                        const [owner, name, templateId, rarity] = key.split('-');
+                        const [owner, name, templateId, rarity, nftCollection] = key.split('-');
 
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${owner}</td>
                             <td>${name}</td>
-                            <td>${templateId}</td>
+                            <td><a href="https://atomichub.io/explorer/template/wax-mainnet/${nftCollection}/${name}_${templateId}" target="_blank" class="template-link">${templateId}</a></td>
                             <td>${rarity}</td>
                             <td class="count">${count}</td>
                         `;
@@ -142,6 +154,7 @@
         });
     </script>
 </head>
+
 <body>
     <h1>By SuperBuu</h1>
 
@@ -156,11 +169,11 @@
 
     <button id="start-button">Start</button>
 
-     <!-- Ajout du bouton pour accéder à la page dataextract.html -->
+    <!-- Ajout du bouton pour accéder à la page dataextract.html -->
     <a href="dataextract.html">
         <button id="go-to-data-extract">Nba Depth Charts</button>
-    </a> 
-    
+    </a>
+
     <table id="nfts-table">
         <thead>
             <tr>
@@ -174,4 +187,5 @@
         <tbody></tbody>
     </table>
 </body>
+
 </html>
