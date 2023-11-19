@@ -25,6 +25,9 @@
             padding: 10px;
             border: 1px solid #ddd;
         }
+        td:nth-child(2) {
+            word-wrap: break-word;
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -85,8 +88,8 @@
                         const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
                         const templateId = nft.template.template_id;
 
-                        // Construire une clé unique pour chaque NFT
-                        const key = `${nft.owner}-${nft.name}-${templateId}-${rarity}`;
+                        // Utiliser le caractère pipe (|) comme séparateur
+                        const key = `${nft.owner}|${nft.name}|${templateId}|${rarity}`;
 
                         // Incrémenter le nombre d'occurrences dans le tableau de comptage
                         nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
@@ -94,7 +97,7 @@
 
                     // Ajouter les résultats au tableau HTML
                     nftCounts.forEach((count, key) => {
-                        const [owner, name, templateId, rarity] = key.split('-');
+                        const [owner, name, templateId, rarity] = key.split('|');
 
                         const row = document.createElement('tr');
                         row.innerHTML = `
@@ -156,7 +159,7 @@
 
     <button id="start-button">Start</button>
 
-     <!-- Ajout du bouton pour accéder à la page dataextract.html -->
+    <!-- Ajout du bouton pour accéder à la page dataextract.html -->
     <a href="dataextract.html">
         <button id="go-to-data-extract">Nba Depth Charts</button>
     </a> 
