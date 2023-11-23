@@ -3,15 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajax Request Example</title>
+    <title>NBA Injuries</title>
     <style>
-        /* Ajoutez du style CSS pour les couleurs de surbrillance */
+        body {
+            background-color: #f0f0f0; /* Fond d'écran gris clair */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333; /* Fond d'écran gris foncé pour l'en-tête */
+            color: white;
+            text-align: center;
+            padding: 1em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd; /* Bordure inférieure gris clair */
+    border-right: 1px solid #aaa; /* Bordure à droite gris foncé */
+    background-color: #f0f0f0; /* Fond blanc pour les cellules */
+}
+
+th:last-child, td:last-child {
+    border-right: none; /* Pour éviter la bordure à droite sur la dernière colonne */
+}
+
+/* Style pour les lignes impaires (un peu plus foncées) */
+tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
         .red-bg { background-color: red; }
         .yellow-bg { background-color: yellow; }
         .green-bg { background-color: green; }
     </style>
 </head>
 <body>
+
+<header>
+    <h1>NBA Injuries</h1>
+</header>
 
 <table border="1">
     <thead>
