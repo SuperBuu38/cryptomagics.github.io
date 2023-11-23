@@ -10,6 +10,8 @@
             flex-direction: column;
             align-items: center;
             margin: 20px;
+            background-color: #f0f0f0; /* Fond de couleur grise */
+            color: #333; /* Texte noir */
         }
         h1 {
             font-size: 24px;
@@ -23,10 +25,37 @@
         th, td {
             text-align: center;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #000; /* Bordures noires */
         }
         td:nth-child(2) {
             word-wrap: break-word;
+        }
+        input, button, a {
+            background-color: #000; /* Fond noir pour les inputs, boutons et liens */
+            color: #fff; /* Texte blanc pour les inputs, boutons et liens */
+            border: none;
+            padding: 10px;
+            margin: 5px;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none; /* Pas de soulignement pour les liens */
+            display: inline-block;
+            transition: background-color 0.3s ease; /* Effet de transition de couleur au survol */
+        }
+        input:focus, button:focus {
+            outline: none; /* Pas de contour lorsqu'un élément est en focus */
+        }
+        button:hover, a:hover {
+            background-color: #333; /* Fond gris foncé au survol */
+        }
+        button {
+            cursor: pointer;
+        }
+        a {
+            text-decoration: none;
+        }
+        a button {
+            margin: 5px;
         }
     </style>
     <script>
@@ -149,13 +178,13 @@
     <h1>By SuperBuu</h1>
 
     <label for="wallet-input">Wallet :</label>
-    <input type="text" id="wallet-input" placeholder="Enter the wallet" style="text-align: center;">
+    <input type="text" id="wallet-input" placeholder="Enter the wallet">
 
     <label for="schema-input">Schema Name :</label>
-    <input type="text" id="schema-input" placeholder="Enter the schema name" style="text-align: center;">
+    <input type="text" id="schema-input" placeholder="Enter the schema name">
 
     <label for="collection-input">Collection name :</label>
-    <input type="text" id="collection-input" placeholder="Enter the collection name" style="text-align: center;">
+    <input type="text" id="collection-input" placeholder="Enter the collection name">
 
     <button id="start-button">Start</button>
 
