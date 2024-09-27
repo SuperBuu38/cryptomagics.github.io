@@ -4,96 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listing NFTs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        /* Style inchangé */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212; 
+            color: #e0e0e0; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #2e2e2e; /* Fond gris foncé */
-            color: #f0f0f0; /* Texte blanc cassé */
-            font-family: 'Roboto', sans-serif; /* Police moderne et lisible */
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
         }
         h1 {
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 20px;
-            color: #f0f0f0;
+            color: #ffffff;
             text-align: center;
         }
         label {
             margin-top: 10px;
-            font-weight: bold;
-        }
-        input, select {
-            background-color: #000; /* Arrière-plan noir */
-            color: #f0f0f0; /* Texte blanc cassé */
-            border: none;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            font-size: 16px;
-            width: 250px; /* Réduction de la largeur */
+            font-weight: 600;
+            display: block;
+            color: #ffffff;
             text-align: center;
         }
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+        input, select {
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+            border: none;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+        }
         input::placeholder {
-            color: #555; /* Placeholder gris */
-            opacity: 1;
+            color: #777;
         }
         button {
-            background-color: #000; /* Bouton noir */
-            color: #fff; /* Texte blanc */
-            border: 2px solid #4aa3df; /* Bordure bleue clair */
-            padding: 10px 20px;
-            margin: 10px;
-            border-radius: 5px;
+            background-color: #00bcd4;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-            width: 250px; /* Réduction de la largeur du bouton */
+            transition: background-color 0.3s ease;
+            width: 100%;
+            max-width: 300px;
         }
         button:hover {
-            background-color: #4aa3df; /* Fond bleu clair au survol */
-            color: #000; /* Texte noir au survol */
-            border-color: #fff; /* Bordure blanche au survol */
+            background-color: #008c9e;
         }
         select {
             cursor: pointer;
         }
         table {
-            width: 90%;
-            margin-top: 15px;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 20px;
             border-collapse: collapse;
-            background-color: #3a3a3a; /* Fond des cellules en gris moyen */
+            background-color: #2a2a2a;
             border-radius: 8px;
             overflow: hidden;
         }
         th, td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #4aa3df; /* Bordure bleue clair */
+            padding: 12px;
+            border-bottom: 1px solid #444;
             text-align: center;
             font-size: 14px;
         }
         th {
-            background-color: #444; /* En-tête gris foncé */
-            color: #f0f0f0;
+            background-color: #333;
+            color: #e0e0e0;
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 600;
         }
         td {
-            color: #d0d0d0; /* Texte légèrement plus gris pour contraste */
+            color: #b0b0b0;
         }
         td a {
-            color: #4aa3df; /* Liens en bleu clair */
+            color: #00bcd4;
             text-decoration: none;
         }
         td a:hover {
             text-decoration: underline;
-            color: #247BA0; /* Liens bleu foncé au survol */
+        }
+        tbody {
+            max-height: 500px;
+            overflow-y: auto;
+            display: block;
+        }
+        tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        thead, tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
         }
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 22px;
+            }
             table {
-                width: 100%; /* Table à 100% sur petits écrans */
+                width: 100%;
             }
         }
     </style>
@@ -101,17 +138,16 @@
         document.addEventListener('DOMContentLoaded', function () {
             const rarityOrder = ['N/A', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 
-            function fetchAllNFTs(walletName, schemaFilter, collectionName) {
+            function fetchAllNFTs(walletName, collectionName) {
                 const apiUrl = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
                 const owner = walletName;
                 const order = 'asc';
                 const sort = 'name';
-                const schemaParam = schemaFilter ? `&schema_name=${schemaFilter}` : '';
                 const collectionParam = collectionName ? `&collection_name=${collectionName}` : '';
                 const nftEntries = [];
 
                 function fetchPage(page) {
-                    const url = `${apiUrl}?owner=${owner}&page=${page}&order=${order}&sort=${sort}${schemaParam}${collectionParam}`;
+                    const url = `${apiUrl}?owner=${owner}&page=${page}&order=${order}&sort=${sort}${collectionParam}`;
                     fetch(url)
                         .then(response => response.json())
                         .then(data => {
@@ -129,18 +165,37 @@
                         .catch(error => console.error('Erreur lors de la requête API :', error));
                 }
 
-                function displayNFTs() {
+             
+
+                function fetchTemplatePrice(templateId) {
+    const priceUrl = `https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates?template_id=${templateId}&symbol=WAX`;
+    return fetch(priceUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.data.length > 0) {
+                const saleLink = `https://wax.atomichub.io/market/sale/${data.data[0].sale_id}`;
+                const minPrice = (data.data[0].price.amount / Math.pow(10, 8)).toFixed(2); // Conversion et formatage du prix en WAX
+                return { minPrice, saleLink };
+            } else {
+                return { minPrice: 'N/A', saleLink: '' };
+            }
+        })
+        .catch(() => ({ minPrice: 'N/A', saleLink: '' }));
+}
+
+
+                async function displayNFTs() {
                     const nftsTable = document.getElementById('nfts-table');
                     nftsTable.querySelector('tbody').innerHTML = '';
                     const nftCounts = new Map();
 
-                    nftEntries.forEach(nft => {
+                    for (const nft of nftEntries) {
                         const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
                         const templateId = nft.template.template_id;
                         const nftName = nft.name.replace(/\s+/g, '-');
                         const key = `${nft.owner}|${nftName}|${templateId}|${rarity}`;
                         nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
-                    });
+                    }
 
                     const sortedEntries = Array.from(nftCounts).sort((a, b) => {
                         const rarityA = a[0].split('|')[3];
@@ -148,10 +203,13 @@
                         return rarityOrder.indexOf(rarityA) - rarityOrder.indexOf(rarityB);
                     });
 
-                    sortedEntries.forEach(([key, count]) => {
+                    for (const [key, count] of sortedEntries) {
                         const [owner, name, templateId, rarity] = key.split('|');
                         const collectionName = document.getElementById('collection-input').value;
                         const templateLink = `https://atomichub.io/explorer/template/wax-mainnet/${collectionName}/${name}_${templateId}`;
+                        
+                        const { minPrice, saleLink } = await fetchTemplatePrice(templateId); // Fetch du prix minimum et lien de vente
+
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${owner}</td>
@@ -159,9 +217,10 @@
                             <td><a href="${templateLink}" target="_blank">${templateId}</a></td>
                             <td>${rarity}</td>
                             <td>${count}</td>
+                            <td>${minPrice} WAX <br><a href="${saleLink}" target="_blank">Sale Link</a></td>
                         `;
                         nftsTable.querySelector('tbody').appendChild(row);
-                    });
+                    }
                 }
 
                 fetchPage(1);
@@ -170,14 +229,15 @@
             function startFetching() {
                 const walletName = document.getElementById('wallet-input').value;
                 if (walletName.trim() !== '') {
-                    const schemaFilter = document.getElementById('schema-input').value;
                     const collectionName = document.getElementById('collection-input').value;
-                    fetchAllNFTs(walletName, schemaFilter, collectionName);
+                    fetchAllNFTs(walletName, collectionName);
                 } else {
                     alert('Enter a wallet name');
                 }
             }
 
+            document.getElementById('start-button').addEventListener('click', startFetching);
+            document.getElement
             document.getElementById('start-button').addEventListener('click', startFetching);
             document.getElementById('refresh-button').addEventListener('click', function() {
                 location.reload();
@@ -188,17 +248,17 @@
 <body>
     <h1>By SuperBuu</h1>
 
-    <label for="wallet-input">Wallet :</label>
-    <input type="text" id="wallet-input" placeholder="Enter the Wallet name">
+    <div class="input-container">
+        <label for="wallet-input">Wallet :</label>
+        <input type="text" id="wallet-input" placeholder="Enter the Wallet name">
 
-    <label for="schema-input">Schema Name :</label>
-    <input type="text" id="schema-input" placeholder="Enter the schema name">
-
-    <label for="collection-input">Collection name :</label>
-    <select id="collection-input">
-        <option value="">-- Select a Collection --</option>
-        <option value="colosseum555">colosseum555</option>
-    </select>
+        <label for="collection-input">Collection name :</label>
+        <select id="collection-input">
+            <option value="">-- Select a Collection --</option>
+            <option value="colosseum555">colosseum555</option>
+            <option value="metabattler">metabattler</option>
+        </select>
+    </div>
 
     <button id="start-button">Start</button>
     <button id="refresh-button">Refresh</button>
@@ -211,6 +271,7 @@
                 <th>Template ID</th>
                 <th>Rarity</th>
                 <th>Duplicates</th>
+                <th>Price & Sale Link</th>
             </tr>
         </thead>
         <tbody></tbody>
