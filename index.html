@@ -139,7 +139,7 @@
                 fetchPage(1);
             }
 
-            // Fonction appelée lors du clic sur le bouton "Start" ou "Refresh"
+            // Fonction appelée lors du clic sur le bouton "Start"
             function startFetching() {
                 // Récupérer le nom du wallet depuis l'input
                 const walletName = document.getElementById('wallet-input').value;
@@ -162,8 +162,10 @@
             // Ajouter un gestionnaire d'événements au bouton "Start"
             document.getElementById('start-button').addEventListener('click', startFetching);
 
-            // Ajouter un gestionnaire d'événements au bouton "Refresh"
-            document.getElementById('refresh-button').addEventListener('click', startFetching);
+            // Ajouter un gestionnaire d'événements au bouton "Refresh" qui recharge la page
+            document.getElementById('refresh-button').addEventListener('click', function() {
+                location.reload(); // Recharger la page
+            });
         });
     </script>
 </head>
