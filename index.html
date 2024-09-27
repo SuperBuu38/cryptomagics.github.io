@@ -9,162 +9,178 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 20px;
-            background-color: #f0f0f0; /* Fond de couleur grise */
-            color: #333; /* Texte noir */
+            justify-content: center;
+            height: 100vh;
+            background-color: #2e2e2e; /* Fond gris foncé */
+            color: #f0f0f0; /* Texte blanc cassé */
+            font-family: 'Roboto', sans-serif; /* Police moderne et lisible */
         }
         h1 {
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            color: #f0f0f0;
+            text-align: center;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, select {
+            background-color: #000; /* Arrière-plan noir */
+            color: #f0f0f0; /* Texte blanc cassé */
+            border: none;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 250px; /* Réduction de la largeur */
+            text-align: center;
+        }
+        input::placeholder {
+            color: #555; /* Placeholder gris */
+            opacity: 1;
+        }
+        button {
+            background-color: #000; /* Bouton noir */
+            color: #fff; /* Texte blanc */
+            border: 2px solid #4aa3df; /* Bordure bleue clair */
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            width: 250px; /* Réduction de la largeur du bouton */
+        }
+        button:hover {
+            background-color: #4aa3df; /* Fond bleu clair au survol */
+            color: #000; /* Texte noir au survol */
+            border-color: #fff; /* Bordure blanche au survol */
+        }
+        select {
+            cursor: pointer;
         }
         table {
             width: 90%;
-            margin-top: 20px;
+            margin-top: 15px;
             border-collapse: collapse;
+            background-color: #3a3a3a; /* Fond des cellules en gris moyen */
+            border-radius: 8px;
+            overflow: hidden;
         }
         th, td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #4aa3df; /* Bordure bleue clair */
             text-align: center;
-            padding: 10px;
-            border: 1px solid #000; /* Bordures noires */
+            font-size: 14px;
         }
-        td:nth-child(2) {
-            word-wrap: break-word;
+        th {
+            background-color: #444; /* En-tête gris foncé */
+            color: #f0f0f0;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        input, button, a, select {
-            background-color: #000; /* Fond noir pour les inputs, boutons et liens */
-            color: #fff; /* Texte blanc pour les inputs, boutons et liens */
-            border: none;
-            padding: 10px;
-            margin: 5px;
-            text-align: center;
-            border-radius: 5px;
-            text-decoration: none; /* Pas de soulignement pour les liens */
-            display: inline-block;
-            transition: background-color 0.3s ease; /* Effet de transition de couleur au survol */
+        td {
+            color: #d0d0d0; /* Texte légèrement plus gris pour contraste */
         }
-        input:focus, button:focus, select:focus {
-            outline: none; /* Pas de contour lorsqu'un élément est en focus */
+        td a {
+            color: #4aa3df; /* Liens en bleu clair */
+            text-decoration: none;
         }
-        button:hover, a:hover, select:hover {
-            background-color: #333; /* Fond gris foncé au survol */
+        td a:hover {
+            text-decoration: underline;
+            color: #247BA0; /* Liens bleu foncé au survol */
         }
-        button {
-            cursor: pointer;
+        @media (max-width: 768px) {
+            table {
+                width: 100%; /* Table à 100% sur petits écrans */
+            }
         }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Fonction pour effectuer la requête API et afficher les résultats
+            const rarityOrder = ['N/A', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+
             function fetchAllNFTs(walletName, schemaFilter, collectionName) {
-                // Informations pour la requête API
                 const apiUrl = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
                 const owner = walletName;
                 const order = 'asc';
                 const sort = 'name';
-
-                // Filtrer par le nom du schéma si spécifié
                 const schemaParam = schemaFilter ? `&schema_name=${schemaFilter}` : '';
-
-                // Filtrer par le nom de la collection si spécifié
                 const collectionParam = collectionName ? `&collection_name=${collectionName}` : '';
-
-                // Tableau pour stocker les entrées NFT
                 const nftEntries = [];
 
-                // Fonction récursive pour récupérer toutes les pages
                 function fetchPage(page) {
                     const url = `${apiUrl}?owner=${owner}&page=${page}&order=${order}&sort=${sort}${schemaParam}${collectionParam}`;
-
                     fetch(url)
                         .then(response => response.json())
                         .then(data => {
-                            // Si la page actuelle ne contient pas de NFT, arrêter la récursion
                             if (data.data.length === 0) {
-                                // Afficher les résultats dans le HTML
                                 displayNFTs();
                                 return;
                             }
-
-                            // Ajouter les résultats à la liste des entrées NFT
                             nftEntries.push(...data.data);
-
-                            // Récupérer la page suivante si elle existe
                             if (data.next_page !== null) {
                                 fetchPage(page + 1);
                             } else {
-                                // Si c'est la dernière page, afficher les résultats dans le HTML
                                 displayNFTs();
                             }
                         })
                         .catch(error => console.error('Erreur lors de la requête API :', error));
                 }
 
-                // Fonction pour afficher les résultats dans le HTML
                 function displayNFTs() {
-                    // Afficher les résultats dans le HTML
                     const nftsTable = document.getElementById('nfts-table');
-                    nftsTable.querySelector('tbody').innerHTML = ''; // Réinitialiser le tableau
-
-                    // Tableau pour suivre les occurrences de chaque NFT
+                    nftsTable.querySelector('tbody').innerHTML = '';
                     const nftCounts = new Map();
 
                     nftEntries.forEach(nft => {
                         const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
                         const templateId = nft.template.template_id;
-
-                        // Utiliser le caractère pipe (|) comme séparateur
-                        const key = `${nft.owner}|${nft.name}|${templateId}|${rarity}`;
-
-                        // Incrémenter le nombre d'occurrences dans le tableau de comptage
+                        const nftName = nft.name.replace(/\s+/g, '-');
+                        const key = `${nft.owner}|${nftName}|${templateId}|${rarity}`;
                         nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
                     });
 
-                    // Ajouter les résultats au tableau HTML
-                    nftCounts.forEach((count, key) => {
-                        const [owner, name, templateId, rarity] = key.split('|');
+                    const sortedEntries = Array.from(nftCounts).sort((a, b) => {
+                        const rarityA = a[0].split('|')[3];
+                        const rarityB = b[0].split('|')[3];
+                        return rarityOrder.indexOf(rarityA) - rarityOrder.indexOf(rarityB);
+                    });
 
+                    sortedEntries.forEach(([key, count]) => {
+                        const [owner, name, templateId, rarity] = key.split('|');
+                        const collectionName = document.getElementById('collection-input').value;
+                        const templateLink = `https://atomichub.io/explorer/template/wax-mainnet/${collectionName}/${name}_${templateId}`;
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${owner}</td>
                             <td>${name}</td>
-                            <td>${templateId}</td>
+                            <td><a href="${templateLink}" target="_blank">${templateId}</a></td>
                             <td>${rarity}</td>
-                            <td class="count">${count}</td>
+                            <td>${count}</td>
                         `;
                         nftsTable.querySelector('tbody').appendChild(row);
                     });
                 }
 
-                // Commencer la récupération des pages à partir de la page 1
                 fetchPage(1);
             }
 
-            // Fonction appelée lors du clic sur le bouton "Start"
             function startFetching() {
-                // Récupérer le nom du wallet depuis l'input
                 const walletName = document.getElementById('wallet-input').value;
-
-                // Vérifier si le nom du wallet est fourni
                 if (walletName.trim() !== '') {
-                    // Récupérer le nom du schéma depuis l'input
                     const schemaFilter = document.getElementById('schema-input').value;
-
-                    // Récupérer le nom de la collection depuis la liste déroulante
                     const collectionName = document.getElementById('collection-input').value;
-
-                    // Appeler la fonction pour récupérer les NFTs avec les filtres spécifiés
                     fetchAllNFTs(walletName, schemaFilter, collectionName);
                 } else {
                     alert('Enter a wallet name');
                 }
             }
 
-            // Ajouter un gestionnaire d'événements au bouton "Start"
             document.getElementById('start-button').addEventListener('click', startFetching);
-
-            // Ajouter un gestionnaire d'événements au bouton "Refresh" qui recharge la page
             document.getElementById('refresh-button').addEventListener('click', function() {
-                location.reload(); // Recharger la page
+                location.reload();
             });
         });
     </script>
@@ -173,7 +189,7 @@
     <h1>By SuperBuu</h1>
 
     <label for="wallet-input">Wallet :</label>
-    <input type="text" id="wallet-input" placeholder="Enter the wallet">
+    <input type="text" id="wallet-input" placeholder="Enter the Wallet name">
 
     <label for="schema-input">Schema Name :</label>
     <input type="text" id="schema-input" placeholder="Enter the schema name">
@@ -182,7 +198,6 @@
     <select id="collection-input">
         <option value="">-- Select a Collection --</option>
         <option value="colosseum555">colosseum555</option>
-        <!-- Ajoutez ici d'autres collections pré-sélectionnables si nécessaire -->
     </select>
 
     <button id="start-button">Start</button>
