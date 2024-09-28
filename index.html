@@ -3,83 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listing NFTs</title>
+    <title>Listing NFTs and Missing Templates</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /* Style inchangé */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #121212; 
-            color: #e0e0e0; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #ffffff;
+            background-color: #1f1f1f;
+            color: #e0e0e0;
             text-align: center;
         }
-        label {
-            margin-top: 10px;
-            font-weight: 600;
-            display: block;
-            color: #ffffff;
-            text-align: center;
+        h1, h2 {
+            color: #00bcd4;
         }
         .input-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 300px;
             margin-bottom: 20px;
         }
         input, select {
-            background-color: #1f1f1f;
-            color: #e0e0e0;
-            border: none;
             padding: 10px;
-            margin: 5px 0 15px 0;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-        }
-        input::placeholder {
-            color: #777;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+            width: 200px;
+            font-size: 14px;
         }
         button {
             background-color: #00bcd4;
-            color: #ffffff;
+            color: white;
+            padding: 10px 20px;
             border: none;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
+            border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            width: 100%;
-            max-width: 300px;
         }
         button:hover {
-            background-color: #008c9e;
-        }
-        select {
-            cursor: pointer;
+            background-color: #0097a7;
         }
         table {
-            width: 100%;
+            margin: 20px auto;
+            width: 90%;
             max-width: 1000px;
-            margin-top: 20px;
             border-collapse: collapse;
             background-color: #2a2a2a;
             border-radius: 8px;
@@ -94,11 +56,7 @@
         th {
             background-color: #333;
             color: #e0e0e0;
-            text-transform: uppercase;
             font-weight: 600;
-        }
-        td {
-            color: #b0b0b0;
         }
         td a {
             color: #00bcd4;
@@ -107,36 +65,50 @@
         td a:hover {
             text-decoration: underline;
         }
-        tbody {
-            max-height: 500px;
-            overflow-y: auto;
-            display: block;
-        }
-        tbody tr {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-        }
-        thead, tbody tr {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-        }
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            h1 {
-                font-size: 22px;
-            }
-            table {
-                width: 100%;
-            }
+        .table-container {
+            margin-top: 40px;
         }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const rarityOrder = ['N/A', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+
+            const missingTemplatesColosseum = [
+                810484, 810482, 809783, 809782, 809781, 798195, 798179, 797049, 797042, 797040,
+                797039, 797036, 797034, 797033, 797032, 797031, 797030, 797029, 797027, 797026,
+                797025, 797024, 797023, 797020, 797019, 797018, 797017, 797016
+            ];
+
+            const nftNamesColosseum = {
+                '810484': 'Colosseum Founders Pass',
+                '810482': 'Custom Legendary NFT Ticket',
+                '809783': 'Colosseum Founders Box',
+                '809782': 'Custom Legendary NFT Ticket',
+                '809781': 'Colosseum Founders Pass',
+                '798195': 'Mini Pack',
+                '798179': 'Standard Pack',
+                '797049': 'Starter Pack',
+                '797042': 'Legendary Cleric',
+                '797040': 'Legendary Rogue',
+                '797039': 'Legendary Wizard',
+                '797036': 'Legendary Warrior',
+                '797034': 'Epic Warrior',
+                '797033': 'Epic Rogue',
+                '797032': 'Epic Cleric',
+                '797031': 'Epic Wizard',
+                '797030': 'Rare Rogue',
+                '797029': 'Rare Warrior',
+                '797027': 'Rare Wizard',
+                '797026': 'Rare Cleric',
+                '797025': 'Uncommon Rogue',
+                '797024': 'Uncommon Wizard',
+                '797023': 'Uncommon Warrior',
+                '797020': 'Uncommon Cleric',
+                '797019': 'Common Rogue',
+                '797018': 'Common Wizard',
+                '797017': 'Common Warrior',
+                '797016': 'Common Cleric'
+            };
 
             function fetchAllNFTs(walletName, collectionName) {
                 const apiUrl = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
@@ -165,33 +137,32 @@
                         .catch(error => console.error('Erreur lors de la requête API :', error));
                 }
 
-             
-
-                function fetchTemplatePrice(templateId) {
-    const priceUrl = `https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates?template_id=${templateId}&symbol=WAX`;
-    return fetch(priceUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.data.length > 0) {
-                const saleLink = `https://wax.atomichub.io/market/sale/${data.data[0].sale_id}`;
-                const minPrice = (data.data[0].price.amount / Math.pow(10, 8)).toFixed(2); // Conversion et formatage du prix en WAX
-                return { minPrice, saleLink };
-            } else {
-                return { minPrice: 'N/A', saleLink: '' };
-            }
-        })
-        .catch(() => ({ minPrice: 'N/A', saleLink: '' }));
-}
-
+                async function fetchTemplatePrice(templateId) {
+                    const priceUrl = `https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates?template_id=${templateId}&symbol=WAX`;
+                    return fetch(priceUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.data.length > 0) {
+                                const saleLink = `https://wax.atomichub.io/market/sale/${data.data[0].sale_id}`;
+                                const minPrice = (data.data[0].price.amount / Math.pow(10, 8)).toFixed(2);
+                                return { minPrice, saleLink };
+                            } else {
+                                return { minPrice: 'N/A', saleLink: '' };
+                            }
+                        })
+                        .catch(() => ({ minPrice: 'N/A', saleLink: '' }));
+                }
 
                 async function displayNFTs() {
                     const nftsTable = document.getElementById('nfts-table');
                     nftsTable.querySelector('tbody').innerHTML = '';
                     const nftCounts = new Map();
+                    const ownedTemplates = new Set();
 
                     for (const nft of nftEntries) {
                         const rarity = nft.data && nft.data.rarity ? nft.data.rarity : 'N/A';
                         const templateId = nft.template.template_id;
+                        ownedTemplates.add(parseInt(templateId));  // Track owned templates
                         const nftName = nft.name.replace(/\s+/g, '-');
                         const key = `${nft.owner}|${nftName}|${templateId}|${rarity}`;
                         nftCounts.set(key, (nftCounts.get(key) || 0) + 1);
@@ -208,7 +179,7 @@
                         const collectionName = document.getElementById('collection-input').value;
                         const templateLink = `https://atomichub.io/explorer/template/wax-mainnet/${collectionName}/${name}_${templateId}`;
                         
-                        const { minPrice, saleLink } = await fetchTemplatePrice(templateId); // Fetch du prix minimum et lien de vente
+                        const { minPrice, saleLink } = await fetchTemplatePrice(templateId);
 
                         const row = document.createElement('tr');
                         row.innerHTML = `
@@ -221,6 +192,29 @@
                         `;
                         nftsTable.querySelector('tbody').appendChild(row);
                     }
+
+                    displayMissingTemplates(ownedTemplates);
+                }
+
+                async function displayMissingTemplates(ownedTemplates) {
+                    const missingTable = document.getElementById('missing-table');
+                    missingTable.querySelector('tbody').innerHTML = '';
+
+                    const missingTemplates = missingTemplatesColosseum.filter(templateId => !ownedTemplates.has(templateId));
+
+                    for (const templateId of missingTemplates) {
+                        const { minPrice, saleLink } = await fetchTemplatePrice(templateId);
+                        const nftName = nftNamesColosseum[templateId]; // Use the object for the correct name
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${templateId}</td>
+                            <td>${nftName}</td>
+                            <td>${minPrice} WAX</td>
+                            <td><a href="${saleLink}" target="_blank">Sale Link</a></td>
+                        `;
+                        missingTable.querySelector('tbody').appendChild(row);
+                    }
                 }
 
                 fetchPage(1);
@@ -228,31 +222,24 @@
 
             function startFetching() {
                 const walletName = document.getElementById('wallet-input').value;
-                if (walletName.trim() !== '') {
-                    const collectionName = document.getElementById('collection-input').value;
+               
+                const collectionName = document.getElementById('collection-input').value;
+                if (walletName) {
                     fetchAllNFTs(walletName, collectionName);
                 } else {
-                    alert('Enter a wallet name');
+                    alert('Veuillez entrer un nom de portefeuille.');
                 }
             }
 
-            document.getElementById('start-button').addEventListener('click', startFetching);
-            document.getElement
-            document.getElementById('start-button').addEventListener('click', startFetching);
-            document.getElementById('refresh-button').addEventListener('click', function() {
-                location.reload();
-            });
+            document.getElementById('fetch-button').addEventListener('click', startFetching);
         });
     </script>
 </head>
 <body>
-    <h1>By SuperBuu</h1>
-
+    <h1>Listing NFTs and Missing Templates</h1>
     <div class="input-container">
-        <label for="wallet-input">Wallet :</label>
-        <input type="text" id="wallet-input" placeholder="Enter the Wallet name">
-
-        <label for="collection-input">Collection name :</label>
+        <input type="text" id="wallet-input" placeholder="Wallet Name" />
+             <label for="collection-input">Collection name :</label>
         <select id="collection-input">
             <option value="">-- Select a Collection --</option>
             <option value="colosseum555">colosseum555</option>
@@ -260,23 +247,37 @@
             <option value="dungeonitems">dungeonitems</option>
             <option value="alien.worlds">alien.worlds</option>
         </select>
+        <button id="fetch-button">Start</button>
     </div>
-
-    <button id="start-button">Start</button>
-    <button id="refresh-button">Refresh</button>
-
-    <table id="nfts-table">
-        <thead>
-            <tr>
-                <th>Wallet</th>
-                <th>NFT Name</th>
-                <th>Template ID</th>
-                <th>Rarity</th>
-                <th>Duplicates</th>
-                <th>Price & Sale Link</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div class="table-container">
+        <h2>Owned Templates</h2>
+        <table id="nfts-table">
+            <thead>
+                <tr>
+                    <th>Owner</th>
+                    <th>Name</th>
+                    <th>Template ID</th>
+                    <th>Rarity</th>
+                    <th>Count</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="table-container">
+        <h2>Missing Templates</h2>
+        <table id="missing-table">
+            <thead>
+                <tr>
+                    <th>Template ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Sale Link</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </body>
 </html>
