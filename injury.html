@@ -1,201 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Injuries</title>
-    <style>
-        body {
-            background-color: #f0f0f0; /* Fond d'écran gris clair */
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+    <title>WAX Data Extraction</title>
+    <script>
+        // Fonction pour extraire les données
+        async function fetchData() {
+            const url = 'https://wax.greymass.com/v1/chain/get_table_rows';
+
+            // Payload contenant les paramètres pour la requête API
+            const payload = {
+                "json": true,
+                "code": "colosseumapp",      // Le contrat que vous interrogez
+                "scope": "colosseumapp",     // L'étendue (scope)
+                "table": "teamrounds",       // La table que vous interrogez
+                "lower_bound": "",           // Limite inférieure (vide pour tout récupérer)
+                "upper_bound": "",           // Limite supérieure (vide pour tout récupérer)
+                "index_position": 1,         // Position de l'index
+                "key_type": "",              // Type de clé (vide)
+                "limit": 3000,               // Nombre maximum de résultats
+                "reverse": false,            // Ne pas inverser les résultats
+                "show_payer": false          // Ne pas afficher les informations du payeur
+            };
+
+            try {
+                // Effectuer la requête POST
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',   // Indiquer que c'est du JSON
+                        'Accept': 'application/json',         // Accepter la réponse en JSON
+                        'Origin': 'https://www.play.raiddgaming.com' // Origine autorisée
+                    },
+                    body: JSON.stringify(payload) // Convertir le payload en JSON pour l'envoi
+                });
+
+                // Vérifier si la requête a réussi
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la requête API');
+                }
+
+                // Parse les données JSON
+                const data = await response.json();
+
+                // Afficher les données dans la console
+                console.log('Données récupérées :', data);
+
+                // Appeler une fonction pour afficher les données dans le HTML
+                displayData(data.rows); // Les lignes sont dans "rows"
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
         }
 
-        header {
-            background-color: #333; /* Fond d'écran gris foncé pour l'en-tête */
-            color: white;
-            text-align: center;
-            padding: 1em;
+        // Fonction pour afficher les données dans le HTML
+        function displayData(rows) {
+            const output = document.getElementById('output');
+            output.innerHTML = ''; // Vider le contenu précédent
+
+            if (rows && rows.length > 0) {
+                rows.forEach((row, index) => {
+                    const rowElement = document.createElement('div');
+                    rowElement.innerHTML = `<strong>Entrée ${index + 1} :</strong> ${JSON.stringify(row)}`;
+                    output.appendChild(rowElement);
+                });
+            } else {
+                output.innerHTML = '<p>Aucune donnée trouvée</p>';
+            }
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd; /* Bordure inférieure gris clair */
-    border-right: 1px solid #aaa; /* Bordure à droite gris foncé */
-    background-color: #f0f0f0; /* Fond blanc pour les cellules */
-}
-
-th:last-child, td:last-child {
-    border-right: none; /* Pour éviter la bordure à droite sur la dernière colonne */
-}
-
-/* Style pour les lignes impaires (un peu plus foncées) */
-tr:nth-child(odd) {
-    background-color: #f9f9f9;
-}
-
-        .red-bg { background-color: red; }
-        .yellow-bg { background-color: yellow; }
-        .green-bg { background-color: green; }
-    </style>
+        // Charger les données à l'ouverture de la page
+        window.onload = fetchData;
+    </script>
 </head>
 <body>
-
-<header>
-    <h1>NBA Injuries</h1>
-</header>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>Player ID</th>
-            <th>Team</th>
-            <th>Position</th>
-            <th>Player Name</th>
-            <th>Injury Status</th>
-            <th>Injury Body Part</th>
-            <th>Injury Start Date</th>
-            <th>Injury Notes</th>
-        </tr>
-    </thead>
-    <tbody id="table-body">
-        <!-- Le corps du tableau sera rempli dynamiquement avec les résultats de l'API -->
-    </tbody>
-</table>
-
-<script>
-    // Fonction pour effectuer la requête Ajax
-    function fetchInjuryData() {
-        var apiUrl = "https://bask-api-main-420f15f4aab2.herokuapp.com/api/v1/lineup/injuries";
-
-        // Utilisez l'objet XMLHttpRequest pour effectuer la requête Ajax
-        var xhr = new XMLHttpRequest();
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var responseData = JSON.parse(xhr.responseText);
-                displayInjuryData(responseData);
-            }
-        };
-
-        xhr.open("GET", apiUrl, true);
-        xhr.send();
-    }
-
-    // Fonction pour afficher les données sur les blessures dans le tableau
-    function displayInjuryData(data) {
-        var tableBody = document.getElementById("table-body");
-
-        // Efface le contenu actuel du tableau
-        tableBody.innerHTML = "";
-
-        // Parcours les résultats de l'API et ajoute chaque ligne au tableau
-        data.forEach(function (player) {
-            var rowElement = document.createElement("tr");
-
-            // Ajoute une cellule pour chaque propriété du joueur
-            var playerIdCell = document.createElement("td");
-            playerIdCell.textContent = player.PlayerID;
-            rowElement.appendChild(playerIdCell);
-
-            var teamCell = document.createElement("td");
-            teamCell.textContent = player.Team;
-            rowElement.appendChild(teamCell);
-
-            var positionCell = document.createElement("td");
-            positionCell.textContent = player.Position;
-            rowElement.appendChild(positionCell);
-
-            // Combine le prénom et le nom pour obtenir le "Player Name"
-            var playerNameCell = document.createElement("td");
-            playerNameCell.textContent = player.FirstName + ' ' + player.LastName;
-            rowElement.appendChild(playerNameCell);
-
-            var injuryStatusCell = document.createElement("td");
-            injuryStatusCell.textContent = player.InjuryStatus;
-            // Ajoute une classe CSS pour la surbrillance en fonction de la valeur d'Injury Status
-            if (player.InjuryStatus === 'Out') {
-                injuryStatusCell.classList.add('red-bg');
-            } else if (player.InjuryStatus === 'Questionable') {
-                injuryStatusCell.classList.add('yellow-bg');
-            } else if (player.InjuryStatus === 'Probable') {
-                injuryStatusCell.classList.add('green-bg');
-            }
-            rowElement.appendChild(injuryStatusCell);
-
-            var injuryBodyPartCell = document.createElement("td");
-            injuryBodyPartCell.textContent = player.InjuryBodyPart;
-            rowElement.appendChild(injuryBodyPartCell);
-
-            var injuryStartDateCell = document.createElement("td");
-            // Formate la date au format "MM/DD/YYYY"
-            injuryStartDateCell.textContent = formatDate(player.InjuryStartDate);
-            rowElement.appendChild(injuryStartDateCell);
-
-            var injuryNotesCell = document.createElement("td");
-            injuryNotesCell.textContent = player.InjuryNotes;
-            rowElement.appendChild(injuryNotesCell);
-
-            // Ajoute d'autres cellules selon les propriétés du joueur
-
-            // Ajoute la ligne au corps du tableau
-            tableBody.appendChild(rowElement);
-        });
-
-        // Appelle la fonction pour rendre la colonne "Team" sortable
-        makeSortable('Team');
-    }
-
-    // Fonction pour formater la date au format "MM/DD/YYYY"
-    function formatDate(dateString) {
-        var options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-        return new Date(dateString).toLocaleDateString('en-US', options);
-    }
-
-    // Fonction pour rendre une colonne sortable
-    function makeSortable(columnName) {
-        var table = document.querySelector('table');
-        var rows = Array.from(table.querySelectorAll('tbody tr'));
-
-        // Ajoute un attribut de données à la colonne pour suivre l'état de tri
-        table.querySelector('th').setAttribute('data-order', 'desc');
-
-        // Ajoute un auditeur d'événements pour déclencher le tri
-        table.querySelector('th').addEventListener('click', function () {
-            var order = this.getAttribute('data-order');
-            order = (order === 'desc') ? 'asc' : 'desc';
-            this.setAttribute('data-order', order);
-
-            // Trie les lignes en fonction de la colonne et de l'ordre
-            rows.sort(function (a, b) {
-                var aValue = a.querySelector('td:nth-child(' + (Array.from(a.parentNode.children).indexOf(a) + 1) + ')').textContent;
-                var bValue = b.querySelector('td:nth-child(' + (Array.from(b.parentNode.children).indexOf(b) + 1) + ')').textContent;
-
-                if (order === 'asc') {
-                    return aValue.localeCompare(bValue);
-                } else {
-                    return bValue.localeCompare(aValue);
-                }
-            });
-
-            // Remplace le contenu du tbody avec les lignes triées
-            rows.forEach(function (row) {
-                table.querySelector('tbody').appendChild(row);
-            });
-        });
-    }
-
-    // Appelle la fonction fetchInjuryData pour démarrer la requête Ajax
-    fetchInjuryData();
-</script>
-
+    <h1>Extraction de données WAX</h1>
+    <div id="output">Chargement des données...</div>
 </body>
 </html>
