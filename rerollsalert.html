@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Stats Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        input, button { margin: 10px 0; padding: 5px; }
+        #result, #history { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .high-stat { color: green; font-weight: bold; }
+        .low-stat { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Card Stats Tracker</h1>
+
+    <input type="text" id="assetId" placeholder="Enter card ID">
+    <button onclick="getCardStats()">Get Stats</button>
+
+    <div id="result"></div>
+
+    <!-- Controls for real-time tracking mode -->
+    <h2>Real-Time Tracking Mode</h2>
+    <button id="startTracking" onclick="startTracking()">Start Tracking</button>
+    <button id="pauseTracking" onclick="pauseTracking()">Pause Tracking</button>
+    <button id="stopTracking" onclick="stopTracking()">Stop Tracking</button>
+    <p id="trackingStatus" style="font-weight: bold;"></p>
+
+    <div id="history">
+        <h3>Stats History</h3>
+        <ul id="historyList"></ul>
+    </div>
+
+    <!-- Sound selection -->
+    <h2>Choose Alert Sound</h2>
+    <select id="soundSelector">
+        <option value="custom">Bell Ringing</option>
+    </select>
+    <button onclick="testSound()">Test Sound</button>
+
+    <!-- Background music -->
+    <h2>Background Music</h2>
+    <button onclick="toggleBackgroundMusic()">Toggle Background Music</button>
+
+    <!-- Sound and music files -->
+    <audio id="alertSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-04.mp3" preload="auto"></audio>
+    <audio id="backgroundMusic" src="https://www.soundjay.com/nature/rain-03.mp3" loop preload="auto"></audio>
+
+    <script>
+        let trackingInterval;
+        let isTracking = false;
+        let lastStats = null;
+        let historyList = document.getElementById('historyList');
+        let hasChanged = false;  // Variable to prevent unnecessary alerts
+
+        function testSound() {
+            document.getElementById('alertSound').play();
+        }
+
+        function toggleBackgroundMusic() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            if (backgroundMusic.paused) {
+                backgroundMusic.play();
+            } else {
+                backgroundMusic.pause();
+            }
+        }
+
+        async function getCardStats() {
+            const assetId = document.getElementById('assetId').value;
+            const url = 'https://api.waxsweden.org/v1/chain/get_table_rows';
+            const data = {
+                json: true,
+                code: 'colosseumapp',
+                scope: 'colosseumapp',
+                table: 'adventurers',
+                lower_bound: assetId,
+                upper_bound: assetId,
+                limit: 1
+            };
+
+            try {
+                const response = await axios.post(url, data);
+                if (response.data.rows.length > 0) {
+                    const card = response.data.rows[0];
+                    const attributes = card.attributes;
+                    const stats = {
+                        strength: attributes.find(attr => attr.key === 'strength').value / 10,
+                        agility: attributes.find(attr => attr.key === 'agility').value / 10,
+                        intelligence: attributes.find(attr => attr.key === 'intelligence').value / 10,
+                        wisdom: attributes.find(attr => attr.key === 'wisdom').value / 10
+                    };
+
+                    displayResult(assetId, stats);
+
+                    if (isTracking) {
+                        checkForStatChange(stats);
+                    }
+                } else {
+                    document.getElementById('result').innerHTML = "No card found with this ID.";
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = "An error occurred while fetching the data.";
+            }
+        }
+
+        function displayResult(assetId, stats) {
+            const resultDiv = document.getElementById('result');
+            const totalStats = Object.values(stats).reduce((sum, value) => sum + value, 0).toFixed(1);
+            resultDiv.innerHTML = `
+                <h2>Results for card ${assetId}</h2>
+                <p>Strength: ${stats.strength.toFixed(1)}</p>
+                <p>Agility: ${stats.agility.toFixed(1)}</p>
+                <p>Intelligence: ${stats.intelligence.toFixed(1)}</p>
+                <p>Wisdom: ${stats.wisdom.toFixed(1)}</p>
+                <p><strong>Total: ${totalStats}</strong></p>
+            `;
+        }
+
+        function startTracking() {
+            if (!isTracking) {
+                isTracking = true;
+                document.getElementById('trackingStatus').innerText = "Tracking mode running...";
+                trackingInterval = setInterval(getCardStats, 1000);
+                document.getElementById('result').innerHTML = "<h2>Waiting for stats to change...</h2>";
+            }
+        }
+
+        function pauseTracking() {
+            clearInterval(trackingInterval);
+            isTracking = false;
+            document.getElementById('trackingStatus').innerText = "Tracking Paused";
+        }
+
+        function stopTracking() {
+            clearInterval(trackingInterval);
+            isTracking = false;
+            lastStats = null;
+            hasChanged = false;
+            document.getElementById('trackingStatus').innerText = "Tracking Stopped";
+            document.getElementById('result').innerHTML = "<h2>Tracking Stopped</h2>";
+        }
+
+        function checkForStatChange(newStats) {
+            if (!lastStats) {
+                lastStats = newStats;
+                return;
+            }
+
+            const statDifference = Object.keys(newStats).reduce((diff, key) => diff + (newStats[key] - lastStats[key]), 0).toFixed(1);
+            
+            // Only proceed if there's an actual change in the stats
+            if (statDifference !== '0.0' && !hasChanged) {
+                hasChanged = true; // Prevent multiple alerts for the same change
+                const totalStats = Object.values(newStats).reduce((sum, value) => sum + value, 0).toFixed(1);
+
+                // Play alert sound
+                document.getElementById('alertSound').play();
+                
+                // Show alert with stats change message
+                setTimeout(() => {
+                    alert(`Reroll success! Your card gained +${statDifference} total stats.`);
+                }, 500);
+
+                // Update last stats to the new stats
+                lastStats = newStats;
+
+                // Add to history
+                addToHistory(newStats, statDifference);
+            }
+        }
+
+        function addToHistory(newStats, statDifference) {
+            const totalStats = Object.values(newStats).reduce((sum, value) => sum + value, 0).toFixed(1);
+            const listItem = document.createElement('li');
+            listItem.textContent = `New Stats: Strength: ${newStats.strength.toFixed(1)}, Agility: ${newStats.agility.toFixed(1)}, Intelligence: ${newStats.intelligence.toFixed(1)}, Wisdom: ${newStats.wisdom.toFixed(1)}, Total: ${totalStats}, Stat gain: +${statDifference}`;
+            historyList.appendChild(listItem);
+        }
+    </script>
+</body>
+</html>
