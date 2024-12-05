@@ -3,185 +3,998 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Stats Tracker</title>
+    <title>Advanced Card Stats Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        input, button { margin: 10px 0; padding: 5px; }
-        #result, #history { margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .high-stat { color: green; font-weight: bold; }
-        .low-stat { color: red; font-weight: bold; }
+        /* Styles inchangés */
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f39c12;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --dark-bg: #1a1a1a;
+            --dark-card: #2d2d2d;
+            --dark-text: #ffffff;
+            --light-bg: #f5f6fa;
+            --light-card: #ffffff;
+            --light-text: #2d3436;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+            background-color: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: inherit;
+            padding: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--light-card);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .dark-mode .card {
+            background: var(--dark-card);
+        }
+
+        .stat-bar {
+            background: #eee;
+            height: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .stat-value {
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        #historyList {
+            max-height: 300px;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+        }
+
+        #historyList li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .settings-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .dark-mode .settings-panel {
+            background: var(--dark-card);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .settings-group {
+            margin-bottom: 15px;
+        }
+
+        .settings-group label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        #cardIds {
+            width: calc(100% - 120px);
+ .stat-range {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .dark-mode .stat-range {
+            color: #aaa;
+        }
+
+        .team-info {
+            margin-top: 10px;
+            padding: 5px;
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 5px;
+        }
+
+        .dark-mode .team-info {
+            background: rgba(74, 144, 226, 0.2);
+        }
     </style>
 </head>
 <body>
-    <h1>Card Stats Tracker</h1>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Advanced Card Stats Dashboard</h1>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
 
-    <input type="text" id="assetId" placeholder="Enter card ID">
-    <button onclick="getCardStats()">Get Stats</button>
+        <div class="grid">
+            <div class="card">
+                <h2><i class="fas fa-plus"></i> Add Cards</h2>
+                <div class="card-input">
+                    <input type="text" id="cardIds" placeholder="Enter asset IDs (comma separated)">
+                    <button id="addCardsBtn">Add Cards</button>
+                </div>
+            </div>
 
-    <div id="result"></div>
+            <div class="card">
+                <h2><i class="fas fa-cog"></i> Tracking Controls</h2>
+                <div class="controls">
+                    <button id="startTrackingBtn">
+                        <i class="fas fa-play"></i> Start
+                    </button>
+                    <button id="pauseTrackingBtn">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button id="stopTrackingBtn">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    <button id="settingsBtn">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+                <p id="trackingStatus"></p>
+            </div>
 
-    <!-- Controls for real-time tracking mode -->
-    <h2>Real-Time Tracking Mode</h2>
-    <button id="startTracking" onclick="startTracking()">Start Tracking</button>
-    <button id="pauseTracking" onclick="pauseTracking()">Pause Tracking</button>
-    <button id="stopTracking" onclick="stopTracking()">Stop Tracking</button>
-    <p id="trackingStatus" style="font-weight: bold;"></p>
+            <div class="card">
+                <h2><i class="fas fa-clock"></i> Session Info</h2>
+                <div id="sessionInfo">
+                    <p>Duration: <span id="sessionTime">00:00:00</span></p>
+                    <p>Changes detected: <span id="changeCount">0</span></p>
+                </div>
+            </div>
+        </div>
 
-    <div id="history">
-        <h3>Stats History</h3>
-        <ul id="historyList"></ul>
+        <div id="cardContainer" class="grid">
+            <!-- Dynamic card stats will be inserted here -->
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-history"></i> History</h2>
+            <canvas id="statsChart"></canvas>
+            <ul id="historyList"></ul>
+        </div>
     </div>
 
-    <!-- Sound selection -->
-    <h2>Choose Alert Sound</h2>
-    <select id="soundSelector">
-        <option value="custom">Bell Ringing</option>
-    </select>
-    <button onclick="testSound()">Test Sound</button>
+    <div class="overlay" id="overlay"></div>
+    <div class="settings-panel" id="settingsPanel">
+        <h2>Settings</h2>
+        <div class="settings-group">
+            <h3>Notifications</h3>
+            <label>
+                <input type="checkbox" id="desktopNotifications"> Enable Desktop Notifications
+            </label>
+            <label>
+                <input type="checkbox" id="soundEnabled"> Enable Sound Alerts
+            </label>
+        </div>
+        <div class="settings-group">
+            <h3>Auto-stop</h3>
+            <label>
+                Stop after 
+                <input type="number" id="autoStopCount" min="1" value="10"> changes
+            </label>
+        </div>
+        <div class="settings-group">
+            <h3>Refresh Rate</h3>
+            <label>
+                Check every 
+                <input type="number" id="refreshRate" min="1" value="1"> seconds
+            </label>
+        </div>
+        <button id="saveSettingsBtn">Save</button>
+        <button id="cancelSettingsBtn">Cancel</button>
+    </div>
 
-    <!-- Background music -->
-    <h2>Background Music</h2>
-    <button onclick="toggleBackgroundMusic()">Toggle Background Music</button>
-
-    <!-- Sound and music files -->
     <audio id="alertSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-04.mp3" preload="auto"></audio>
-    <audio id="backgroundMusic" src="https://www.soundjay.com/nature/rain-03.mp3" loop preload="auto"></audio>
+<script>
+        // Table de correspondance pour les cartes
+        const cardConfigs = {
+            0: { rarity: 'Common', class: 'Warrior' },
+            1: { rarity: 'Uncommon', class: 'Warrior' },
+            2: { rarity: 'Rare', class: 'Wizard' },
+            3: { rarity: 'Epic', class: 'Cleric' },
+            25: { rarity: 'Legendary', class: 'Warrior' },
+            5: { rarity: 'Common', class: 'Wizard' },
+            6: { rarity: 'Uncommon', class: 'Wizard' },
+            7: { rarity: 'Rare', class: 'Warrior' },
+            8: { rarity: 'Epic', class: 'Rogue' },
+            10: { rarity: 'Common', class: 'Cleric' },
+            11: { rarity: 'Uncommon', class: 'Cleric' },
+            12: { rarity: 'Rare', class: 'Cleric' },
+            13: { rarity: 'Epic', class: 'Wizard' },
+            15: { rarity: 'Common', class: 'Rogue' },
+            16: { rarity: 'Uncommon', class: 'Rogue' },
+            17: { rarity: 'Rare', class: 'Rogue' },
+            18: { rarity: 'Epic', class: 'Warrior' },
+            26: { rarity: 'Legendary', class: 'Wizard' },
+            29: { rarity: 'Legendary', class: 'Cleric' },
+            31: { rarity: 'Legendary', class: 'Rogue' }
+        };
 
-    <script>
+        // Global variables
         let trackingInterval;
         let isTracking = false;
-        let lastStats = null;
-        let historyList = document.getElementById('historyList');
-        let hasChanged = false;  // Variable to prevent unnecessary alerts
+        let trackedCards = new Map(); // Map stockant {assetId: {cfgId, stats}}
+        let sessionStartTime;
+        let changeCount = 0;
+        let statsChart;
 
-        function testSound() {
-            document.getElementById('alertSound').play();
+        // Settings object
+        let settings = {
+            desktopNotifications: false,
+            soundEnabled: true,
+            autoStopCount: 10,
+            refreshRate: 1
+        };
+
+        // DOM Elements
+        const elements = {
+            themeToggle: document.getElementById('themeToggle'),
+            addCardsBtn: document.getElementById('addCardsBtn'),
+            startTrackingBtn: document.getElementById('startTrackingBtn'),
+            pauseTrackingBtn: document.getElementById('pauseTrackingBtn'),
+            stopTrackingBtn: document.getElementById('stopTrackingBtn'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+            cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+            overlay: document.getElementById('overlay'),
+            settingsPanel: document.getElementById('settingsPanel'),
+            trackingStatus: document.getElementById('trackingStatus'),
+            sessionTime: document.getElementById('sessionTime'),
+            changeCount: document.getElementById('changeCount'),
+            cardIds: document.getElementById('cardIds'),
+            alertSound: document.getElementById('alertSound')
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            initializeChart();
+            setupEventListeners();
+            loadThemePreference();
+        });
+
+        function setupEventListeners() {
+            elements.themeToggle.addEventListener('click', toggleTheme);
+            elements.addCardsBtn.addEventListener('click', addCards);
+            elements.startTrackingBtn.addEventListener('click', startTracking);
+            elements.pauseTrackingBtn.addEventListener('click', pauseTracking);
+            elements.stopTrackingBtn.addEventListener('click', stopTracking);
+            elements.settingsBtn.addEventListener('click', openSettings);
+            elements.saveSettingsBtn.addEventListener('click', saveSettings);
+            elements.cancelSettingsBtn.addEventListener('click', closeSettings);
         }
 
-        function toggleBackgroundMusic() {
-            const backgroundMusic = document.getElementById('backgroundMusic');
-            if (backgroundMusic.paused) {
-                backgroundMusic.play();
-            } else {
-                backgroundMusic.pause();
+        // Theme functions
+        function loadThemePreference() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                updateChartTheme(true);
             }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            updateChartTheme(isDark);
+            
+            elements.themeToggle.innerHTML = isDark ? 
+                '<i class="fas fa-sun"></i>' : 
+                '<i class="fas fa-moon"></i>';
+        }
+
+        // Settings functions
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('cardTrackerSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                document.getElementById('desktopNotifications').checked = settings.desktopNotifications;
+                document.getElementById('soundEnabled').checked = settings.soundEnabled;
+                document.getElementById('autoStopCount').value = settings.autoStopCount;
+                document.getElementById('refreshRate').value = settings.refreshRate;
+            }
+        }
+
+        function saveSettings() {
+            settings.desktopNotifications = document.getElementById('desktopNotifications').checked;
+            settings.soundEnabled = document.getElementById('soundEnabled').checked;
+            settings.autoStopCount = parseInt(document.getElementById('autoStopCount').value);
+            settings.refreshRate = parseInt(document.getElementById('refreshRate').value);
+            
+            localStorage.setItem('cardTrackerSettings', JSON.stringify(settings));
+            closeSettings();
+        }
+
+        function openSettings() {
+            elements.overlay.style.display = 'block';
+            elements.settingsPanel.style.display = 'block';
+        }
+
+        function closeSettings() {
+            elements.overlay.style.display = 'none';
+            elements.settingsPanel.style.display = 'none';
+        }
+
+        // Chart functions
+        function initializeChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            statsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Stats',
+                        data: [],
+                        borderColor: '#4a90e2',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartTheme(isDark) {
+            if (statsChart) {
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                const textColor = isDark ? '#fff' : '#666';
+
+                statsChart.options.scales.y.grid.color = gridColor;
+                statsChart.options.scales.x.grid.color = gridColor;
+                statsChart.options.scales.y.ticks.color = textColor;
+                statsChart.options.scales.x.ticks.color = textColor;
+                statsChart.update();
+            }
+        }
+
+        // Card tracking functions
+        async function addCards() {
+            const assetIds = elements.cardIds.value.split(',').map(id => id.trim());
+            
+            for (const assetId of assetIds) {
+                if (!trackedCards.has(assetId) && assetId !== '') {
+                    try {
+                        // Récupérer l'adventure_cfg_id pour cet asset
+                        const response = await axios.post('https://api.waxsweden.org/v1/chain/get_table_rows', {
+                            json: true,
+                            code: 'colosseumapp',
+                            scope: 'colosseumapp',
+                            table: 'adventurers',
+                            lower_bound: assetId,
+                            upper_bound: assetId,
+                            limit: 1
+                        });
+
+                        if (response.data.rows.length > 0) {
+                            const cfgId = response.data.rows[0].adventure_cfg_id;
+                            trackedCards.set(assetId, { cfgId, stats: null });
+                            createCardElement(assetId, cfgId);
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching config ID for asset ${assetId}:`, error);
+                    }
+                }
+            }
+
+            elements.cardIds.value = '';
+        }
+
+        function getCardName(cfgId) {
+            if (cardConfigs[cfgId]) {
+                const { rarity, class: className } = cardConfigs[cfgId];
+                return `${rarity} ${className}`;
+            }
+            return 'Unknown Card';
+        }
+
+        function createCardElement(assetId, cfgId) {
+            const cardName = getCardName(cfgId);
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.id = `card-${assetId}`;
+            cardElement.innerHTML = `
+                <h3>${cardName} (Asset #${assetId})</h3>
+                <div class="stats">
+                    <div>
+                        <label>Strength:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="strength-${assetId}" style="width: 0%">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Agility:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="agility-${assetId}" style="width: 0%">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Intelligence:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="intelligence-${assetId}" style="width: 0%">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Wisdom:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="wisdom-${assetId}" style="width: 0%">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Total:</label>
+                        <span id="total-${assetId}">0</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('cardContainer').appendChild(cardElement);
+        }
+
+        function updateCardStats(assetId, stats) {
+            const maxStat = 100;
+            
+            Object.entries(stats).forEach(([stat, value]) => {
+                const element = document.getElementById(`${stat}-${assetId}`);
+                if (element) {
+                    const percentage = (value / maxStat) * 100;
+                    element.style.width = `${percentage}%`;
+                    element.textContent = value.toFixed(1);
+                }
+            });
+
+            const total = Object.values(stats).reduce((sum, value) => sum + value, 0);
+            const totalElement = document.getElementById(`total-${assetId}`);
+            if (totalElement) {
+                totalElement.textContent = total.toFixed(1);
+            }
+
+            return total;
         }
 
         async function getCardStats() {
-            const assetId = document.getElementById('assetId').value;
-            const url = 'https://api.waxsweden.org/v1/chain/get_table_rows';
-            const data = {
-                json: true,
-                code: 'colosseumapp',
-                scope: 'colosseumapp',
-                table: 'adventurers',
-                lower_bound: assetId,
-                upper_bound: assetId,
-                limit: 1
-            };
+            for (const [assetId, cardInfo] of trackedCards) {
+                try {
+                    const response = await axios.post('https://api.waxsweden.org/v1/chain/get_table_rows', {
+                        json: true,
+                        code: 'colosseumapp',
+                        scope: 'colosseumapp',
+                        table: 'adventurers',
+                        lower_bound: assetId,
+                        upper_bound: assetId,
+                        limit: 1
+                    });
 
-            try {
-                const response = await axios.post(url, data);
-                if (response.data.rows.length > 0) {
-                    const card = response.data.rows[0];
-                    const attributes = card.attributes;
-                    const stats = {
-                        strength: attributes.find(attr => attr.key === 'strength').value / 10,
-                        agility: attributes.find(attr => attr.key === 'agility').value / 10,
-                        intelligence: attributes.find(attr => attr.key === 'intelligence').value / 10,
-                        wisdom: attributes.find(attr => attr.key === 'wisdom').value / 10
-                    };
+                    if (response.data.rows.length > 0) {
+                        const card = response.data.rows[0];
+                        const attributes = card.attributes;
+                        const currentStats = {
+                            strength: attributes.find(attr => attr.key === 'strength').value / 10,
+                            agility: attributes.find(attr => attr.key === 'agility').value / 10,
+                            intelligence: attributes.find(attr => attr.key === 'intelligence').value / 10,
+                            wisdom: attributes.find(attr => attr.key === 'wisdom').value / 10
+                        };
 
-                    displayResult(assetId, stats);
+                        const total = updateCardStats(assetId, currentStats);
 
-                    if (isTracking) {
-                        checkForStatChange(stats);
+                        if (cardInfo.stats) {
+                            const previousTotal = Object.values(cardInfo.stats).reduce((sum, value) => sum + value, 0);
+                            if (total !== previousTotal) {
+                                handleStatChange(assetId, cardInfo.cfgId, cardInfo.stats, currentStats);
+                            }
+                        }
+
+                        trackedCards.set(assetId, { ...cardInfo, stats: currentStats });
                     }
-                } else {
-                    document.getElementById('result').innerHTML = "No card found with this ID.";
+                } catch (error) {
+                    console.error(`Error fetching stats for asset ${assetId}:`, error);
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('result').innerHTML = "An error occurred while fetching the data.";
             }
         }
 
-        function displayResult(assetId, stats) {
-            const resultDiv = document.getElementById('result');
-            const totalStats = Object.values(stats).reduce((sum, value) => sum + value, 0).toFixed(1);
-            resultDiv.innerHTML = `
-                <h2>Results for card ${assetId}</h2>
-                <p>Strength: ${stats.strength.toFixed(1)}</p>
-                <p>Agility: ${stats.agility.toFixed(1)}</p>
-                <p>Intelligence: ${stats.intelligence.toFixed(1)}</p>
-                <p>Wisdom: ${stats.wisdom.toFixed(1)}</p>
-                <p><strong>Total: ${totalStats}</strong></p>
-            `;
+        function handleStatChange(assetId, cfgId, oldStats, newStats) {
+            const oldTotal = Object.values(oldStats).reduce((sum, value) => sum + value, 0);
+            const newTotal = Object.values(newStats).reduce((sum, value) => sum + value, 0);
+            const difference = (newTotal - oldTotal).toFixed(1);
+            const cardName = getCardName(cfgId);
+
+            changeCount++;
+            elements.changeCount.textContent = changeCount;
+
+            addToHistory(assetId, cardName, oldStats, newStats, difference);
+
+            if (settings.soundEnabled) {
+                elements.alertSound.play();
+            }
+
+            if (settings.desktopNotifications && Notification.permission === "granted") {
+                new Notification("Stat Change Detected!", {
+                    body: `${cardName} (Asset #${assetId}) total stats changed by ${difference}`
+                });
+            }
+
+            if (settings.autoStopCount && changeCount >= settings.autoStopCount) {
+                stopTracking();
+            }
         }
 
+        function addToHistory(assetId, cardName, oldStats, newStats, difference) {
+            const timestamp = new Date().toLocaleTimeString();
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <strong>${timestamp}</strong> - ${cardName} (Asset #${assetId}): 
+                Total change: ${difference > 0 ? '+' : ''}${difference}
+                (${Object.entries(newStats)
+                    .map(([stat, value]) => {
+                        const diff = (value - oldStats[stat]).toFixed(1);
+                        return `${stat}: ${diff > 0 ? '+' : ''}${diff}`;
+                    })
+                    .join(', ')})
+            `;
+            
+            document.getElementById('historyList').prepend(listItem);
+            updateChart(timestamp, parseFloat(difference));
+        }
+
+        function updateChart(label, difference) {
+            statsChart.data.labels.push(label);
+            statsChart.data.datasets[0].data.push(difference);
+
+            if (statsChart.data.labels.length > 20) {
+                statsChart.data.labels.shift();
+                statsChart.data.datasets[0].data.shift();
+            }
+
+            statsChart.update();
+        }
+
+        let sessionTimer;
+        
         function startTracking() {
             if (!isTracking) {
+                if (trackedCards.size === 0) {
+                    alert("Please add at least one card to track!");
+                    return;
+                }
+
+                if (settings.desktopNotifications && Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+
                 isTracking = true;
-                document.getElementById('trackingStatus').innerText = "Tracking mode running...";
-                trackingInterval = setInterval(getCardStats, 1000);
-                document.getElementById('result').innerHTML = "<h2>Waiting for stats to change...</h2>";
+                sessionStartTime = new Date();
+                trackingInterval = setInterval(getCardStats, settings.refreshRate * 1000);
+                sessionTimer = setInterval(updateSessionTime, 1000);
+                elements.trackingStatus.textContent = "Tracking active...";
+                elements.trackingStatus.style.color = "var(--success-color)";
             }
         }
 
         function pauseTracking() {
-            clearInterval(trackingInterval);
-            isTracking = false;
-            document.getElementById('trackingStatus').innerText = "Tracking Paused";
+            if (isTracking) {
+                clearInterval(trackingInterval);
+                clearInterval(sessionTimer);
+                isTracking = false;
+                elements.trackingStatus.textContent = "Tracking paused";
+                elements.trackingStatus.style.color = "var(--secondary-color)";
+            }
         }
 
         function stopTracking() {
             clearInterval(trackingInterval);
+            clearInterval(sessionTimer);
             isTracking = false;
-            lastStats = null;
-            hasChanged = false;
-            document.getElementById('trackingStatus').innerText = "Tracking Stopped";
-            document.getElementById('result').innerHTML = "<h2>Tracking Stopped</h2>";
+            sessionStartTime = null;
+            changeCount = 0;
+            elements.changeCount.textContent = "0";
+            elements.sessionTime.textContent = "00:00:00";
+            elements.trackingStatus.textContent = "Tracking stopped";
+            elements.trackingStatus.style.color = "var(--danger-color)";
         }
 
-        function checkForStatChange(newStats) {
-            if (!lastStats) {
-                lastStats = newStats;
-                return;
-            }
-
-            const statDifference = Object.keys(newStats).reduce((diff, key) => diff + (newStats[key] - lastStats[key]), 0).toFixed(1);
-            
-            // Only proceed if there's an actual change in the stats
-            if (statDifference !== '0.0' && !hasChanged) {
-                hasChanged = true; // Prevent multiple alerts for the same change
-                const totalStats = Object.values(newStats).reduce((sum, value) => sum + value, 0).toFixed(1);
-
-                // Play alert sound
-                document.getElementById('alertSound').play();
+        function updateSessionTime() {
+            if (sessionStartTime) {
+                const now = new Date();
+                const diff = now - sessionStartTime;
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                 
-                // Show alert with stats change message
-                setTimeout(() => {
-                    alert(`Reroll success! Your card gained +${statDifference} total stats.`);
-                }, 500);
-
-                // Update last stats to the new stats
-                lastStats = newStats;
-
-                // Add to history
-                addToHistory(newStats, statDifference);
+                elements.sessionTime.textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
         }
 
-        function addToHistory(newStats, statDifference) {
-            const totalStats = Object.values(newStats).reduce((sum, value) => sum + value, 0).toFixed(1);
-            const listItem = document.createElement('li');
-            listItem.textContent = `New Stats: Strength: ${newStats.strength.toFixed(1)}, Agility: ${newStats.agility.toFixed(1)}, Intelligence: ${newStats.intelligence.toFixed(1)}, Wisdom: ${newStats.wisdom.toFixed(1)}, Total: ${totalStats}, Stat gain: +${statDifference}`;
-            historyList.appendChild(listItem);
+        // Initialize notification permission
+        if (Notification.permission !== "denied") {
+            Notification.requestPermission();
         }
+        // Add stat ranges to card configs
+        const cardRanges = {
+        0: {
+            strength: { min: 501, max: 1502 },
+            agility: { min: 501, max: 1002 },
+            intelligence: { min: 501, max: 1002 },
+            wisdom: { min: 501, max: 1002 }
+        },
+        1: {
+            strength: { min: 501, max: 1602 },
+            agility: { min: 501, max: 1052 },
+            intelligence: { min: 501, max: 1052 },
+            wisdom: { min: 501, max: 1052 }
+        },
+        2: {
+            strength: { min: 551, max: 1702 },
+            agility: { min: 551, max: 1102 },
+            intelligence: { min: 551, max: 1102 },
+            wisdom: { min: 551, max: 1102 }
+        },
+        3: {
+            strength: { min: 551, max: 1802 },
+            agility: { min: 551, max: 1152 },
+            intelligence: { min: 551, max: 1152 },
+            wisdom: { min: 551, max: 1152 }
+        },
+        25: {
+            strength: { min: 601, max: 2002 },
+            agility: { min: 601, max: 1202 },
+            intelligence: { min: 601, max: 1202 },
+            wisdom: { min: 601, max: 1202 }
+        },
+        5: {
+            strength: { min: 501, max: 1002 },
+            agility: { min: 501, max: 1002 },
+            intelligence: { min: 501, max: 1502 },
+            wisdom: { min: 501, max: 1002 }
+        },
+        6: {
+            strength: { min: 501, max: 1052 },
+            agility: { min: 501, max: 1052 },
+            intelligence: { min: 501, max: 1602 },
+            wisdom: { min: 501, max: 1052 }
+        },
+        7: {
+            strength: { min: 551, max: 1102 },
+            agility: { min: 551, max: 1102 },
+            intelligence: { min: 551, max: 1702 },
+            wisdom: { min: 551, max: 1102 }
+        },
+        8: {
+            strength: { min: 551, max: 1152 },
+            agility: { min: 551, max: 1152 },
+            intelligence: { min: 551, max: 1802 },
+            wisdom: { min: 551, max: 1152 }
+        },
+        10: {
+            strength: { min: 501, max: 1002 },
+            agility: { min: 501, max: 1002 },
+            intelligence: { min: 501, max: 1002 },
+            wisdom: { min: 501, max: 1502 }
+        },
+        11: {
+            strength: { min: 501, max: 1052 },
+            agility: { min: 501, max: 1052 },
+            intelligence: { min: 501, max: 1052 },
+            wisdom: { min: 501, max: 1602 }
+        },
+        12: {
+            strength: { min: 551, max: 1102 },
+            agility: { min: 551, max: 1102 },
+            intelligence: { min: 551, max: 1102 },
+            wisdom: { min: 551, max: 1702 }
+        },
+        13: {
+            strength: { min: 551, max: 1152 },
+            agility: { min: 551, max: 1152 },
+            intelligence: { min: 551, max: 1152 },
+            wisdom: { min: 551, max: 1802 }
+        },
+        15: {
+            strength: { min: 501, max: 1002 },
+            agility: { min: 501, max: 1502 },
+            intelligence: { min: 501, max: 1002 },
+            wisdom: { min: 501, max: 1002 }
+        },
+        16: {
+            strength: { min: 501, max: 1052 },
+            agility: { min: 501, max: 1602 },
+            intelligence: { min: 501, max: 1052 },
+            wisdom: { min: 501, max: 1052 }
+        },
+        17: {
+            strength: { min: 551, max: 1102 },
+            agility: { min: 551, max: 1702 },
+            intelligence: { min: 551, max: 1102 },
+            wisdom: { min: 551, max: 1102 }
+        },
+        18: {
+            strength: { min: 551, max: 1152 },
+            agility: { min: 551, max: 1802 },
+            intelligence: { min: 551, max: 1152 },
+            wisdom: { min: 551, max: 1152 }
+        },
+        26: {
+            strength: { min: 601, max: 1202 },
+            agility: { min: 601, max: 1202 },
+            intelligence: { min: 601, max: 2002 },
+            wisdom: { min: 601, max: 1202 }
+        },
+        29: {
+            strength: { min: 601, max: 1202 },
+            agility: { min: 601, max: 1202 },
+            intelligence: { min: 601, max: 1202 },
+            wisdom: { min: 601, max: 2002 }
+        },
+        31: {
+            strength: { min: 601, max: 1202 },
+            agility: { min: 601, max: 2002 },
+            intelligence: { min: 601, max: 1202 },
+            wisdom: { min: 601, max: 1202 }
+        }
+    };
+
+
+        // Add team tracking
+        let teamInfo = new Map();
+
+        // Modified createCardElement function
+        function createCardElement(assetId, cfgId) {
+            const cardName = getCardName(cfgId);
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.id = `card-${assetId}`;
+            
+            // Get stat ranges for this card type
+            const ranges = cardRanges[cfgId] || {};
+            
+            cardElement.innerHTML = `
+                <h3>${cardName} (Asset #${assetId})</h3>
+                <div class="team-info" id="team-${assetId}">
+                    Team: Loading...
+                </div>
+                <div class="stats">
+                    <div>
+                        <label>Strength:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="strength-${assetId}" style="width: 0%">0</div>
+                        </div>
+                        <div class="stat-range">Range: ${ranges.strength ? 
+                            `${ranges.strength.min/10} - ${ranges.strength.max/10}` : 
+                            'Unknown'}</div>
+                    </div>
+                    <div>
+                        <label>Agility:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="agility-${assetId}" style="width: 0%">0</div>
+                        </div>
+                        <div class="stat-range">Range: ${ranges.agility ? 
+                            `${ranges.agility.min/10} - ${ranges.agility.max/10}` : 
+                            'Unknown'}</div>
+                    </div>
+                    <div>
+                        <label>Intelligence:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="intelligence-${assetId}" style="width: 0%">0</div>
+                        </div>
+                        <div class="stat-range">Range: ${ranges.intelligence ? 
+                            `${ranges.intelligence.min/10} - ${ranges.intelligence.max/10}` : 
+                            'Unknown'}</div>
+                    </div>
+                    <div>
+                        <label>Wisdom:</label>
+                        <div class="stat-bar">
+                            <div class="stat-value" id="wisdom-${assetId}" style="width: 0%">0</div>
+                        </div>
+                        <div class="stat-range">Range: ${ranges.wisdom ? 
+                            `${ranges.wisdom.min/10} - ${ranges.wisdom.max/10}` : 
+                            'Unknown'}</div>
+                    </div>
+                    <div>
+                        <label>Total:</label>
+                        <span id="total-${assetId}">0</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('cardContainer').appendChild(cardElement);
+            updateTeamInfo(assetId);
+        }
+
+        // New function to fetch and update team information
+        async function updateTeamInfo(assetId) {
+            try {
+                const response = await axios.post('https://api.waxsweden.org/v1/chain/get_table_rows', {
+                    json: true,
+                    code: 'colosseumapp',
+                    scope: 'colosseumapp',
+                    table: 'teams',
+                    limit: 5000,
+                    reverse: false,
+                    show_payer: false
+                });
+
+                let teamName = 'Not in team';
+                for (const team of response.data.rows) {
+                    if (team.adventurer_ids.includes(assetId)) {
+                        teamName = team.name;
+                        break;
+                    }
+                }
+
+                const teamElement = document.getElementById(`team-${assetId}`);
+                if (teamElement) {
+                    teamElement.textContent = `Team: ${teamName}`;
+                }
+
+                teamInfo.set(assetId, teamName);
+            } catch (error) {
+                console.error('Error fetching team info:', error);
+            }
+        }
+
+        // Modified getCardStats function to handle rate limiting
+        async function getCardStats() {
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
+            for (const [assetId, cardInfo] of trackedCards) {
+                try {
+                    const response = await axios.post('https://api.waxsweden.org/v1/chain/get_table_rows', {
+                        json: true,
+                        code: 'colosseumapp',
+                        scope: 'colosseumapp',
+                        table: 'adventurers',
+                        lower_bound: assetId,
+                        upper_bound: assetId,
+                        limit: 1
+                    });
+
+                    // Add a small delay between requests to avoid rate limiting
+                    await delay(100);
+
+                     if (response.data.rows.length > 0) {
+                const card = response.data.rows[0];
+                const attributes = card.attributes;
+                const currentStats = {
+                    strength: attributes.find(attr => attr.key === 'strength').value / 10,
+                    agility: attributes.find(attr => attr.key === 'agility').value / 10,
+                    intelligence: attributes.find(attr => attr.key === 'intelligence').value / 10,
+                    wisdom: attributes.find(attr => attr.key === 'wisdom').value / 10
+                };
+
+                const total = updateCardStats(assetId, currentStats);
+
+                if (cardInfo.stats) {
+                    const previousTotal = Object.values(cardInfo.stats).reduce((sum, value) => sum + value, 0);
+                    if (total !== previousTotal) {
+                        handleStatChange(assetId, cardInfo.cfgId, cardInfo.stats, currentStats);
+                    }
+                }
+
+                trackedCards.set(assetId, { ...cardInfo, stats: currentStats });
+            }
+        }
+        catch (error) {
+            if (error.response && error.response.status === 429) {
+                // If rate limited, wait longer and try again
+                await delay(2000);
+                continue;
+            }
+            console.error(`Error fetching stats for asset ${assetId}:`, error);
+        }
+    }
+
+    // Update team info periodically
+    for (const assetId of trackedCards.keys()) {
+        await updateTeamInfo(assetId);
+        await delay(100);
+    }
+}
     </script>
 </body>
 </html>
+
